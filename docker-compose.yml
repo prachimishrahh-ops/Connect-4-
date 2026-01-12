@@ -12,7 +12,7 @@ services:
       - "8082:8082"  # Service B (Player B)
       - "8083:8083"  # Lobby/Master service
     volumes:
-      - C:/Users/prate/Downloads/new prejt or buildahtin/connect4-battle:/build
+      - .:/build
     working_dir: /build
     command: bash /build/docker-run.sh
     environment:

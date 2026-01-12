@@ -26,3 +26,11 @@ frontend/.packages
 *.tmp
 *~
 node_modules/
+
+# Flutter generated files (contain local paths)
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+
+# Test output files
+*-output.txt
+*-test-output.txt
