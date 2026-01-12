@@ -336,9 +336,9 @@ impl LiarsDiceGame {
         // If actual count >= bid quantity, the caller was wrong (loses a die)
         // If actual count < bid quantity, the bidder was wrong (loses a die)
         let loser = if actual_count >= bid.quantity {
-            self.liar_caller.clone()
+            self.liar_caller
         } else {
-            bid.bidder.clone()
+            bid.bidder
         };
 
         // Apply penalty
@@ -359,8 +359,8 @@ impl LiarsDiceGame {
             .collect();
 
         if active_players.len() == 1 {
-            let winner_chain = active_players[0].chain_id.clone();
-            self.winner = winner_chain.clone();
+            let winner_chain = active_players[0].chain_id;
+            self.winner = winner_chain;
             if let Some(ref wc) = winner_chain {
                 if let Some(player) = self.get_player_mut_by_chain(wc) {
                     player.result = GameResult::Won;

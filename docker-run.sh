@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-echo "=== Starting Liar's Dice Docker Deployment ==="
+echo "=== Starting Connect4 Battle Docker Deployment ==="
 
 # Create a temp directory for linera network
 export LINERA_TMP=$(mktemp -d)
@@ -132,30 +132,25 @@ PLAYER_B_CHAIN=$(LINERA_WALLET="$PLAYER_B_WALLET" LINERA_KEYSTORE="$PLAYER_B_KEY
   linera wallet show 2>&1 | grep -oE '[0-9a-f]{64}' | head -1)
 echo "Player B chain: $PLAYER_B_CHAIN"
 
-# Deploy liars_dice on MASTER chain (type 0)
-echo "📤 Deploying liars_dice app on Master chain..."
-LIARS_DICE_OUTPUT=$(linera --wait-for-outgoing-messages project publish-and-create liars_dice \
+# Deploy connect4 on MASTER chain (type 0) - Master now handles lobby functionality
+echo "📤 Deploying connect4 app on Master chain (with built-in lobby)..."
+CONNECT4_OUTPUT=$(linera --wait-for-outgoing-messages project publish-and-create liars_dice \
   --required-application-ids "$BANKROLL_ID" \
   --json-parameters "{\"master_chain\": \"$CHAIN_ID\", \"lobby_chain\": \"$CHAIN_ID\", \"bankroll\": \"$BANKROLL_ID\"}" \
   --json-argument "0" 2>&1)
 
-echo "$LIARS_DICE_OUTPUT"
-LIARS_DICE_ID=$(echo "$LIARS_DICE_OUTPUT" | grep -E '^[0-9a-f]{64}$' | tail -1)
+echo "$CONNECT4_OUTPUT"
+CONNECT4_ID=$(echo "$CONNECT4_OUTPUT" | grep -E '^[0-9a-f]{64}$' | tail -1)
 
-if [ -z "$LIARS_DICE_ID" ]; then
-    echo "❌ Could not get liars_dice app ID"
+if [ -z "$CONNECT4_ID" ]; then
+    echo "❌ Could not get connect4 app ID"
     exit 1
 fi
-echo "✅ Liar's Dice app ID: $LIARS_DICE_ID"
+echo "✅ Connect4 app ID: $CONNECT4_ID"
+echo "✅ Master chain handles both admin and lobby functions"
 
-# Request app on player chains (will auto-instantiate)
-echo "📤 Requesting app on Player A chain..."
-LINERA_WALLET="$PLAYER_A_WALLET" LINERA_KEYSTORE="$PLAYER_A_KEYSTORE" LINERA_STORAGE="$PLAYER_A_STORAGE" \
-  linera request-application "$LIARS_DICE_ID" 2>&1 || echo "App may already be available"
-
-echo "📤 Requesting app on Player B chain..."
-LINERA_WALLET="$PLAYER_B_WALLET" LINERA_KEYSTORE="$PLAYER_B_KEYSTORE" LINERA_STORAGE="$PLAYER_B_STORAGE" \
-  linera request-application "$LIARS_DICE_ID" 2>&1 || echo "App may already be available"
+# Set lobby chain to master chain since master handles lobby functionality
+LOBBY_CHAIN="$CHAIN_ID"
 
 # Create frontend configs with player-specific chains
 echo "📝 Creating frontend configs..."
@@ -164,10 +159,10 @@ mkdir -p /build/frontend/web_a /build/frontend/web_b
 cat > /build/frontend/web_a/config.json <<EOF
 {
   "nodeServiceURL": "http://localhost:8081",
-  "liarsDiceAppId": "$LIARS_DICE_ID",
+  "connect4AppId": "$CONNECT4_ID",
   "bankrollAppId": "$BANKROLL_ID",
   "masterChain": "$CHAIN_ID",
-  "lobbyChain": "$CHAIN_ID",
+  "lobbyChain": "$LOBBY_CHAIN",
   "userChain": "$PLAYER_A_CHAIN"
 }
 EOF
@@ -175,17 +170,16 @@ EOF
 cat > /build/frontend/web_b/config.json <<EOF
 {
   "nodeServiceURL": "http://localhost:8082",
-  "liarsDiceAppId": "$LIARS_DICE_ID",
+  "connect4AppId": "$CONNECT4_ID",
   "bankrollAppId": "$BANKROLL_ID",
   "masterChain": "$CHAIN_ID",
-  "lobbyChain": "$CHAIN_ID",
+  "lobbyChain": "$LOBBY_CHAIN",
   "userChain": "$PLAYER_B_CHAIN"
 }
 EOF
 
-# Copy frontend files
-cp /build/frontend/index.html /build/frontend/web_a/ 2>/dev/null || echo "Warning: index.html not found"
-cp /build/frontend/index.html /build/frontend/web_b/ 2>/dev/null || echo "Warning: index.html not found"
+# Frontend files already exist in web_a and web_b directories
+echo "✅ Frontend files ready (web_a/index.html and web_b/index.html)"
 
 # Start services with separate wallets (already created above)
 echo "🌐 Starting linera services..."
@@ -232,20 +226,29 @@ cd /build/frontend/web_b && python3 -m http.server 5174 > /tmp/web_5174.log 2>&1
 
 echo ""
 echo "==================================="
-echo "🎲 Liar's Dice is ready!"
+echo "🎮 Connect4 Battle is ready!"
 echo "==================================="
-echo "Player A Frontend: http://localhost:5173"
-echo "Player B Frontend: http://localhost:5174"
-echo "Service A GraphQL: http://localhost:8081"
-echo "Service B GraphQL: http://localhost:8082"
-echo "Lobby Service:     http://localhost:8083"
+echo "Player A Frontend (Red):  http://localhost:5173"
+echo "Player B Frontend (Yellow): http://localhost:5174"
+echo "Service A GraphQL:         http://localhost:8081"
+echo "Service B GraphQL:         http://localhost:8082"
+echo "Lobby Service:             http://localhost:8083"
 echo "==================================="
 echo ""
-echo "Master/Lobby Chain: $CHAIN_ID"
+echo "Master Chain: $CHAIN_ID"
+echo "Lobby Chain:  $LOBBY_CHAIN"
 echo "Player A Chain: $PLAYER_A_CHAIN"
 echo "Player B Chain: $PLAYER_B_CHAIN"
 echo "Bankroll App: $BANKROLL_ID"
-echo "Liar's Dice App: $LIARS_DICE_ID"
+echo "Connect4 App: $CONNECT4_ID"
+echo "==================================="
+echo ""
+echo "📋 INSTRUCTIONS:"
+echo "1. Open http://localhost:5173 (Player A - Red)"
+echo "2. Open http://localhost:5174 (Player B - Yellow)"
+echo "3. Both players: Enter name and click 'Create Profile'"
+echo "4. Both players: Click 'Find Match'"
+echo "5. Game starts automatically when matched!"
 echo "==================================="
 
 # Keep container running

@@ -186,7 +186,7 @@ impl Contract for BankrollContract {
                 );
 
                 // Subtract the debt amount from blackjack_token pool
-                let current_token_log = current_token.clone();
+                let current_token_log = *current_token;
                 let remaining_token = current_token.saturating_sub(amount);
                 self.state.blackjack_token.set(remaining_token);
 

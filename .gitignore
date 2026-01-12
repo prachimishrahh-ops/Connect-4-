@@ -25,3 +25,4 @@ frontend/.packages
 # Temp files
 *.tmp
 *~
+node_modules/

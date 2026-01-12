@@ -1,17 +1,18 @@
 version: '3.8'
 
 services:
-  liars-dice:
+  connect4-battle:
     image: kvozt/linera-dev:latest
-    container_name: liars-dice
+    container_name: connect4-battle
     ports:
-      - "5173:5173"  # Player A frontend
-      - "5174:5174"  # Player B frontend
+      - "5173:5173"  # Player A frontend (Red)
+      - "5174:5174"  # Player B frontend (Yellow)
+      - "5175:5175"  # Player C frontend (reserved)
       - "8081:8081"  # Service A (Player A)
       - "8082:8082"  # Service B (Player B)
       - "8083:8083"  # Lobby/Master service
     volumes:
-      - C:/Users/prate/Downloads/new prejt or buildahtin/liars-dice:/build
+      - C:/Users/prate/Downloads/new prejt or buildahtin/connect4-battle:/build
     working_dir: /build
     command: bash /build/docker-run.sh
     environment:

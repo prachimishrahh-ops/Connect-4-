@@ -188,8 +188,7 @@ pub fn calculate_elo_change(player_elo: u32, opponent_elo: u32, won: bool) -> i3
     let actual_scaled: i32 = if won { 1000 } else { 0 };
 
     // K_FACTOR = 32, calculate: K * (actual - expected) / scale
-    let change = (32 * (actual_scaled - expected_scaled)) / 1000;
-    change
+    (32 * (actual_scaled - expected_scaled)) / 1000
 }
 
 /// Calculate expected score (win probability) scaled by 1000

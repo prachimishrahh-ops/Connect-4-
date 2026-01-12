@@ -1,42 +1,45 @@
 #![cfg_attr(target_arch = "wasm32", no_main)]
 
+//! Connect4 Battle Service
+//!
+//! GraphQL query service for the Connect4 game on Linera blockchain.
+
 mod state;
 
 use std::sync::Arc;
 
-use abi::dice::PlayerDice;
-use abi::game::LiarsDiceGame;
+use abi::connect4::Player;
 use abi::leaderboard::SimpleLeaderboardEntry;
 use abi::player::PlayerProfile;
 use async_graphql::{EmptySubscription, Object, Schema};
-use liars_dice::LiarsDiceOperation;
+use connect4::Connect4Operation;
 use linera_sdk::linera_base_types::ChainId;
 use linera_sdk::{
     graphql::GraphQLMutationRoot, linera_base_types::WithServiceAbi, views::View, Service,
     ServiceRuntime,
 };
 
-use self::state::LiarsDiceState;
+use self::state::{Connect4GameState, LiarsDiceState};
 
-pub struct LiarsDiceService {
+pub struct Connect4Service {
     state: Arc<LiarsDiceState>,
     runtime: Arc<ServiceRuntime<Self>>,
 }
 
-linera_sdk::service!(LiarsDiceService);
+linera_sdk::service!(Connect4Service);
 
-impl WithServiceAbi for LiarsDiceService {
-    type Abi = liars_dice::LiarsDiceAbi;
+impl WithServiceAbi for Connect4Service {
+    type Abi = connect4::Connect4Abi;
 }
 
-impl Service for LiarsDiceService {
+impl Service for Connect4Service {
     type Parameters = ();
 
     async fn new(runtime: ServiceRuntime<Self>) -> Self {
         let state = LiarsDiceState::load(runtime.root_view_storage_context())
             .await
             .expect("Failed to load state");
-        LiarsDiceService {
+        Connect4Service {
             state: Arc::new(state),
             runtime: Arc::new(runtime),
         }
@@ -48,7 +51,7 @@ impl Service for LiarsDiceService {
                 state: self.state.clone(),
                 runtime: self.runtime.clone(),
             },
-            LiarsDiceOperation::mutation_root(self.runtime.clone()),
+            Connect4Operation::mutation_root(self.runtime.clone()),
             EmptySubscription,
         )
         .finish()
@@ -60,7 +63,7 @@ impl Service for LiarsDiceService {
 #[allow(dead_code)]
 struct QueryRoot {
     state: Arc<LiarsDiceState>,
-    runtime: Arc<ServiceRuntime<LiarsDiceService>>,
+    runtime: Arc<ServiceRuntime<Connect4Service>>,
 }
 
 #[Object]
@@ -79,19 +82,17 @@ impl QueryRoot {
         self.state.user_profile.get().clone()
     }
 
-    /// Get the user's dice (only available on user chain, used for reveal)
-    async fn get_user_dice(&self) -> Option<PlayerDice> {
-        self.state.user_dice.get().clone()
-    }
-
-    /// Get the user's salt (only available on user chain, used for reveal)
-    async fn get_user_salt(&self) -> Option<Vec<u8>> {
-        self.state.user_salt.get().map(|s| s.to_vec())
+    /// Get the user's assigned color in current game
+    async fn get_user_color(&self) -> Option<String> {
+        self.state.user_color.get().map(|p| match p {
+            Player::Red => "Red".to_string(),
+            Player::Yellow => "Yellow".to_string(),
+        })
     }
 
     /// Get the current game state (from subscription)
-    async fn get_game_state(&self) -> Option<LiarsDiceGame> {
-        self.state.channel_game_state.get().clone()
+    async fn get_game_state(&self) -> Option<Connect4GameStateView> {
+        self.state.channel_game_state.get().clone().map(|g| g.into())
     }
 
     /// Get the lobby chain ID
@@ -118,8 +119,8 @@ impl QueryRoot {
     // ============================================
 
     /// Get the current game on this game chain
-    async fn get_current_game(&self) -> Option<LiarsDiceGame> {
-        self.state.current_game.get().clone()
+    async fn get_current_game(&self) -> Option<Connect4GameStateView> {
+        self.state.current_game.get().clone().map(|g| g.into())
     }
 
     /// Check if this game chain is available
@@ -158,8 +159,8 @@ impl QueryRoot {
             }
         }
 
-        // Sort by rank
-        entries.sort_by(|a, b| a.rank.cmp(&b.rank));
+        // Sort by ELO (highest first)
+        entries.sort_by(|a, b| b.elo.cmp(&a.elo));
         entries
     }
 
@@ -171,5 +172,73 @@ impl QueryRoot {
             .await
             .expect("Failed to count players")
             .len() as u64
+    }
+}
+
+/// GraphQL-friendly view of Connect4 game state
+#[derive(async_graphql::SimpleObject)]
+struct Connect4GameStateView {
+    /// Game ID
+    pub game_id: u64,
+    /// Board as a flat array (row-major, 6 rows x 7 columns = 42 cells)
+    /// Each cell is: null (empty), "Red", or "Yellow"
+    pub board: Vec<Option<String>>,
+    /// Current turn
+    pub current_turn: String,
+    /// Game status
+    pub status: String,
+    /// Winner if finished
+    pub winner: Option<String>,
+    /// Number of moves made
+    pub move_count: u32,
+    /// Red player chain ID
+    pub red_player_chain: Option<ChainId>,
+    /// Red player name
+    pub red_player_name: Option<String>,
+    /// Yellow player chain ID
+    pub yellow_player_chain: Option<ChainId>,
+    /// Yellow player name
+    pub yellow_player_name: Option<String>,
+}
+
+impl From<Connect4GameState> for Connect4GameStateView {
+    fn from(game: Connect4GameState) -> Self {
+        // Flatten board to array
+        let board: Vec<Option<String>> = game.board
+            .iter()
+            .flat_map(|row| {
+                row.iter().map(|cell| {
+                    cell.map(|p| match p {
+                        Player::Red => "Red".to_string(),
+                        Player::Yellow => "Yellow".to_string(),
+                    })
+                })
+            })
+            .collect();
+
+        let current_turn = match game.current_turn {
+            Player::Red => "Red".to_string(),
+            Player::Yellow => "Yellow".to_string(),
+        };
+
+        let status = format!("{:?}", game.status);
+
+        let winner = game.winner.map(|p| match p {
+            Player::Red => "Red".to_string(),
+            Player::Yellow => "Yellow".to_string(),
+        });
+
+        Connect4GameStateView {
+            game_id: game.game_id,
+            board,
+            current_turn,
+            status,
+            winner,
+            move_count: game.move_history.len() as u32,
+            red_player_chain: game.red_player.as_ref().map(|p| p.chain_id),
+            red_player_name: game.red_player.as_ref().map(|p| p.name.clone()),
+            yellow_player_chain: game.yellow_player.as_ref().map(|p| p.chain_id),
+            yellow_player_name: game.yellow_player.as_ref().map(|p| p.name.clone()),
+        }
     }
 }

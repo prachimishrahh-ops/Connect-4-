@@ -1,0 +1,1 @@
+# Screenshots\n\nAdd gameplay screenshots here for the README.\n\nRecommended screenshots:\n1. Main gameplay (both players side-by-side)\n2. Victory screen\n3. Matchmaking screen\n4. Move synchronization\n\nScreenshots should be high-quality PNG files.
