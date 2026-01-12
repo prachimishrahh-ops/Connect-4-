@@ -10,7 +10,7 @@
 
 ## 📹 Demo Video
 
-**🎬 Watch the full demo:** [YouTube Demo Link](YOUR_VIDEO_LINK_HERE)
+**🎬 Watch the full demo:** [YouTube Demo Link](https://youtu.be/i4aGtje_qck)
 
 > *5-minute video showing: Docker setup, matchmaking, real-time gameplay, cross-chain messaging, and victory detection*
 
@@ -368,19 +368,8 @@ Apache 2.0 License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
-
-- **Linera Team** - For the amazing microchains platform
-- **WaveHack Buildathon** - For the opportunity to showcase this
-- **Open Source Community** - For inspiration and support
-
 ---
 
-## 📞 Contact
-
-**Project Maintainer:** [@prachimishrahh-ops](https://github.com/prachimishrahh-ops)
-
-**Issues:** [GitHub Issues](https://github.com/prachimishrahh-ops/Connect-4-/issues)
 
 ---
 
