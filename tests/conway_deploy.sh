@@ -66,7 +66,7 @@ sleep 5
 
 # 5. Deploy Connect4 Battle (using liars_dice module name from workspace)
 echo "📤 Deploying Connect4 Battle App..."
-CONNECT4_APP_ID=$(l_cmd --wait-for-outgoing-messages project publish-and-create ../liars_dice \
+CONNECT4_APP_ID=$(l_cmd --wait-for-outgoing-messages project publish-and-create ../connect4 \
   --required-application-ids "$BANKROLL_APP_ID" \
   --json-parameters "{\"master_chain\": \"$DEFAULT_CHAIN_ID\", \"lobby_chain\": \"$DEFAULT_CHAIN_ID\", \"bankroll\": \"$BANKROLL_APP_ID\"}" \
   --json-argument "0")

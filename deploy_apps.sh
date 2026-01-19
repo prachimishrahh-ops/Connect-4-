@@ -38,7 +38,7 @@ echo ""
 echo "=== Deploying Liar's Dice on Lobby Chain (type 1) ==="
 LOBBY_APP=$(linera --wallet "$W1" --storage "$S1" --keystore "$K1" \
   --wait-for-outgoing-messages \
-  project publish-and-create . liars_dice \
+  project publish-and-create . connect4 \
   --required-application-ids "$BANKROLL_APP_ID" \
   --json-argument "1" \
   --json-parameters "{\"master_chain\": \"$MASTER\", \"lobby_chain\": \"$LOBBY\", \"bankroll\": \"$BANKROLL_APP_ID\"}")
@@ -70,7 +70,7 @@ echo ""
 echo "=== Deploying Liar's Dice for Player A (type 3) ==="
 USER_A_APP=$(linera --wallet "$W2" --storage "$S2" --keystore "$K2" \
   --wait-for-outgoing-messages \
-  project publish-and-create . liars_dice \
+  project publish-and-create . connect4 \
   --required-application-ids "$BANKROLL_APP_ID" \
   --json-argument "3" \
   --json-parameters "{\"master_chain\": \"$MASTER\", \"lobby_chain\": \"$LOBBY\", \"bankroll\": \"$BANKROLL_APP_ID\"}")
@@ -106,7 +106,7 @@ echo ""
 echo "=== Deploying Liar's Dice for Player B (type 3) ==="
 USER_B_APP=$(linera --wallet "$W3" --storage "$S3" --keystore "$K3" \
   --wait-for-outgoing-messages \
-  project publish-and-create . liars_dice \
+  project publish-and-create . connect4 \
   --required-application-ids "$BANKROLL_APP_ID" \
   --json-argument "3" \
   --json-parameters "{\"master_chain\": \"$MASTER\", \"lobby_chain\": \"$LOBBY\", \"bankroll\": \"$BANKROLL_APP_ID\"}")

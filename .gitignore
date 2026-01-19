@@ -34,3 +34,5 @@ frontend/.flutter-plugins-dependencies
 # Test output files
 *-output.txt
 *-test-output.txt
+
+nul

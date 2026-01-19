@@ -134,7 +134,7 @@ echo "Player B chain: $PLAYER_B_CHAIN"
 
 # Deploy connect4 on MASTER chain (type 0) - Master now handles lobby functionality
 echo "📤 Deploying connect4 app on Master chain (with built-in lobby)..."
-CONNECT4_OUTPUT=$(linera --wait-for-outgoing-messages project publish-and-create liars_dice \
+CONNECT4_OUTPUT=$(linera --wait-for-outgoing-messages project publish-and-create connect4 \
   --required-application-ids "$BANKROLL_ID" \
   --json-parameters "{\"master_chain\": \"$CHAIN_ID\", \"lobby_chain\": \"$CHAIN_ID\", \"bankroll\": \"$BANKROLL_ID\"}" \
   --json-argument "0" 2>&1)
