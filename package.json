@@ -2,5 +2,11 @@
   "dependencies": {
     "node-fetch": "^2.7.0",
     "playwright": "^1.57.0"
+  },
+  "scripts": {
+    "test:e2e": "node tests/e2e/playwright-complete-game.js",
+    "test:matchmaking": "node tests/e2e/playwright-test.js",
+    "test:graphql": "node tests/e2e/test-graphql.js",
+    "test:multiplayer": "node tests/e2e/test-multiplayer.js"
   }
 }
