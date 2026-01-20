@@ -45,3 +45,7 @@ tests/e2e/chrome-*/
 
 # Root level screenshots (keep docs/screenshots)
 /*.png
+
+# Internal docs
+docs/internal/
+DEMO_VIDEO_SCRIPT.md
