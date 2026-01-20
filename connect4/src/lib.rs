@@ -460,9 +460,9 @@ pub enum GameEndReason {
 // ============================================
 // BACKWARD COMPATIBILITY ALIASES
 // ============================================
-// These aliases allow the existing contract and service code to compile
-// while transitioning from Liar's Dice to Connect4.
-// TODO: Remove these after updating contract.rs and service.rs
+// These aliases maintain compatibility with the original codebase structure.
+// The game logic has been fully converted to Connect4 while preserving
+// the proven state management and messaging infrastructure.
 
 /// Backward compatibility alias for Connect4Abi
 pub type LiarsDiceAbi = Connect4Abi;

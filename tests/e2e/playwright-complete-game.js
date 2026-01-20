@@ -18,21 +18,19 @@ const { chromium } = require('playwright');
     await pageB.goto('http://localhost:5174');
     await new Promise(r => setTimeout(r, 3000));
 
-    // Create profiles
-    console.log('🔴 Red: Creating profile...');
+    // Enter names and start game (UI updated to use "PLAY NOW" button)
+    console.log('🔴 Red: Starting game...');
     await pageA.fill('input#playerName', 'RedPlayer');
-    await pageA.click('button:has-text("Create Profile")');
+    await pageA.click('button:has-text("PLAY NOW")');
     await new Promise(r => setTimeout(r, 2000));
 
-    console.log('🟡 Yellow: Creating profile...');
+    console.log('🟡 Yellow: Starting game...');
     await pageB.fill('input#playerName', 'YellowPlayer');
-    await pageB.click('button:has-text("Create Profile")');
+    await pageB.click('button:has-text("PLAY NOW")');
     await new Promise(r => setTimeout(r, 2000));
 
-    // Start matchmaking
-    console.log('\n🔍 Starting matchmaking...');
-    await pageA.click('button:has-text("Find Match")');
-    await pageB.click('button:has-text("Find Match")');
+    // Matchmaking is automatic with PLAY NOW
+    console.log('\n🔍 Matchmaking in progress...');
 
     // Wait for match with better detection
     console.log('⏳ Waiting for match (up to 30 seconds)...');

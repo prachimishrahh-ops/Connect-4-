@@ -25,7 +25,11 @@ frontend/.packages
 # Temp files
 *.tmp
 *~
+nul
+
+# Dependencies
 node_modules/
+package-lock.json
 
 # Flutter generated files (contain local paths)
 frontend/.flutter-plugins
@@ -35,4 +39,9 @@ frontend/.flutter-plugins-dependencies
 *-output.txt
 *-test-output.txt
 
-nul
+# Test screenshots and browser profiles
+tests/e2e/*.png
+tests/e2e/chrome-*/
+
+# Root level screenshots (keep docs/screenshots)
+/*.png

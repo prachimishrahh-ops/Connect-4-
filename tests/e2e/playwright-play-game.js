@@ -19,20 +19,20 @@ const { chromium } = require('playwright');
   // Create profiles
   console.log('🔴 Player A: Creating profile...');
   await pageA.fill('input#playerName', 'RedChampion');
-  await pageA.click('button:has-text("Create Profile")');
+  await pageA.click('button:has-text("PLAY NOW")');
   await new Promise(r => setTimeout(r, 2000));
 
   console.log('🟡 Player B: Creating profile...');
   await pageB.fill('input#playerName', 'YellowWarrior');
-  await pageB.click('button:has-text("Create Profile")');
+  await pageB.click('button:has-text("PLAY NOW")');
   await new Promise(r => setTimeout(r, 2000));
 
   // Find match
   console.log('🔴 Player A: Finding match...');
-  await pageA.click('button:has-text("Find Match")');
+  await pageA.click('button:has-text("PLAY NOW")');
 
   console.log('🟡 Player B: Finding match...');
-  await pageB.click('button:has-text("Find Match")');
+  await pageB.click('button:has-text("PLAY NOW")');
 
   console.log('⏳ Waiting for match...');
   await new Promise(r => setTimeout(r, 5000));
