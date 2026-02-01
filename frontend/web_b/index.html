@@ -382,9 +382,99 @@
         .leaderboard-elo { font-weight: 700; color: var(--yellow); }
 
         .hidden { display: none !important; }
+
+        /* TOAST NOTIFICATION SYSTEM */
+        .toast-container {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 10002;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: toast-in 0.3s ease-out, toast-out 0.3s ease-in 2.7s forwards;
+            pointer-events: auto;
+            max-width: 350px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .toast.success { background: rgba(34,197,94,0.9); color: white; }
+        .toast.error { background: rgba(239,68,68,0.9); color: white; }
+        .toast.info { background: rgba(59,130,246,0.9); color: white; }
+        .toast.warning { background: rgba(245,158,11,0.9); color: #1a1a1a; }
+        @keyframes toast-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes toast-out { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+
+        /* ENHANCED LOADING SPINNER */
+        .loader-spinner {
+            width: 60px; height: 60px;
+            border: 4px solid rgba(168,85,247,0.2);
+            border-top-color: var(--neon-cyan);
+            border-right-color: var(--neon-purple);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .loader-text {
+            animation: pulse-text 1.5s ease-in-out infinite;
+        }
+
+        /* MOVE CONFIRMATION PULSE */
+        @keyframes move-confirmed {
+            0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+            70% { box-shadow: 0 0 0 15px rgba(34,197,94,0); }
+            100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+        }
+        .cell.confirmed { animation: move-confirmed 0.6s ease-out; }
+
+        /* LATENCY DISPLAY */
+        .latency-display {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            padding: 6px 12px;
+            background: rgba(5,5,8,0.8);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .latency-display .latency-value { font-weight: 600; }
+        .latency-display .latency-value.good { color: var(--green); }
+        .latency-display .latency-value.medium { color: var(--yellow); }
+        .latency-display .latency-value.poor { color: var(--red); }
+
+        /* RECONNECTION OVERLAY */
+        .reconnect-overlay {
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            padding: 12px 20px;
+            background: rgba(239,68,68,0.9);
+            border-radius: 12px;
+            font-size: 0.85rem;
+            z-index: 10001;
+            color: white;
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+        .reconnect-overlay.active { display: block; animation: toast-in 0.3s ease-out; }
     </style>
 </head>
 <body>
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="latency-display">Latency: <span class="latency-value" id="latencyValue">--</span>ms</div>
+    <div class="reconnect-overlay" id="reconnectOverlay">Reconnecting... <span id="reconnectCountdown"></span></div>
+
     <div class="bg-animation">
         <!-- 35 FLOATING PARTICLES with varied sizes, positions, and timing -->
         <div class="floating-particle" style="width: 40px; height: 40px; top: 10%; left: 5%; --duration: 20s; --opacity: 0.2; --tx-start: 0; --ty-start: 0;"></div>
@@ -787,18 +877,32 @@
             catch (error) { updateConnectionStatus(false); }
         }
 
+        var _gqlBusy = false;
+        function _isLocal() {
+            return config.nodeServiceURL.includes('localhost') || config.nodeServiceURL.includes('127.0.0.1');
+        }
         async function graphql(query, showLoading = false) {
-            const appId = config.liarsDiceAppId || config.connect4AppId;
-            // CRITICAL FIX: Use user chain for mutations, not lobby chain
-            const url = config.nodeServiceURL + "/chains/" + config.userChain + "/applications/" + appId;
+            while (_gqlBusy) {
+                await new Promise(r => setTimeout(r, 200));
+            }
+            _gqlBusy = true;
+            const appId = config.connect4AppId;
+            const chainPath = "/chains/" + config.userChain + "/applications/" + appId;
+            const isLocal = _isLocal();
+            const fetchUrl = isLocal ? (config.nodeServiceURL + chainPath) : "/api/proxy";
+            const fetchBody = isLocal
+                ? JSON.stringify({ query })
+                : JSON.stringify({ targetUrl: config.nodeServiceURL + chainPath, query });
             try {
                 if (showLoading) showLoader("Processing...");
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-                const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }), signal: controller.signal });
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                const response = await fetch(fetchUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: fetchBody, signal: controller.signal });
                 clearTimeout(timeoutId);
+                if (!response.ok) throw new Error("HTTP " + response.status);
                 const data = await response.json();
                 if (data.errors) throw new Error(data.errors[0].message);
+                if (data.error) throw new Error(Array.isArray(data.error) ? data.error[0] : data.error);
                 updateConnectionStatus(true);
                 if (showLoading) hideLoader();
                 return data;
@@ -806,6 +910,8 @@
                 hideLoader();
                 if (error.name === "AbortError") { updateConnectionStatus(false); }
                 throw error;
+            } finally {
+                _gqlBusy = false;
             }
         }
 
@@ -833,15 +939,19 @@
             showLoader("Setting up your game...");
 
             try {
-                // Step 1: Create profile
-                console.log("📝 Step 1: Creating profile...");
-                await graphql('mutation { setProfile(name: "' + name.replace(/["\\\n\r]/g, "").substring(0, 20) + '") }');
-                console.log("✅ Step 1: Profile created successfully");
+                // Step 1: Connect to lobby FIRST (sets chain_type from 0 to 3/User)
+                console.log("🔗 Step 1: Connecting to lobby...");
+                await graphql('mutation { initialSetup(lobbyChain: "' + config.lobbyChain + '") }');
+                console.log("✅ Step 1: Connected to lobby successfully");
 
-                // Step 2: Connect to lobby
-                console.log("🔗 Step 2: Connecting to lobby...");
-                await graphql('mutation { initialSetup }');
-                console.log("✅ Step 2: Connected to lobby successfully");
+                await new Promise(r => setTimeout(r, 1500));
+
+                // Step 2: Create profile (requires chain_type == 3)
+                console.log("📝 Step 2: Creating profile...");
+                await graphql('mutation { setProfile(name: "' + name.replace(/["\\\n\r]/g, "").substring(0, 20) + '") }');
+                console.log("✅ Step 2: Profile created successfully");
+
+                await new Promise(r => setTimeout(r, 1500));
 
                 // Step 3: Find match
                 console.log("🔍 Step 3: Finding match...");
@@ -868,7 +978,7 @@
 
         async function initialSetup() {
             showLoader("Connecting to lobby...");
-            try { await graphql('mutation { initialSetup }'); updateBlockchainStatus(); }
+            try { await graphql('mutation { initialSetup(lobbyChain: "' + config.lobbyChain + '") }'); updateBlockchainStatus(); }
             catch (e) {}
             hideLoader();
         }
@@ -876,7 +986,7 @@
         async function findMatch() {
             sounds.playSound('click');
             showLoader("Connecting...");
-            try { await graphql('mutation { initialSetup }'); } catch (e) {}
+            try { await graphql('mutation { initialSetup(lobbyChain: "' + config.lobbyChain + '") }'); } catch (e) {}
             try { await graphql('mutation { findMatch }'); document.getElementById("matchmakingStatus").classList.remove("hidden"); document.getElementById("cancelBtn").style.display = "block"; }
             catch (e) {}
             hideLoader();
@@ -1058,12 +1168,18 @@
                 let gameState = null;
                 if (gameChainId) {
                     try {
-                        const appId = config.liarsDiceAppId || config.connect4AppId;
-                        const gameChainUrl = config.nodeServiceURL.replace(/:\d+$/, ':8083') + "/chains/" + gameChainId + "/applications/" + appId;
-                        const response = await fetch(gameChainUrl, {
+                        const appId = config.connect4AppId;
+                        const gameChainPath = "/chains/" + gameChainId + "/applications/" + appId;
+                        const gcQuery = 'query { getCurrentGame { gameId board currentTurn status winner moveCount redPlayerName yellowPlayerName } }';
+                        const isLocal = _isLocal();
+                        const gcUrl = isLocal ? (config.nodeServiceURL.replace(/:\d+$/, ':8083') + gameChainPath) : "/api/proxy";
+                        const gcBody = isLocal
+                            ? JSON.stringify({ query: gcQuery })
+                            : JSON.stringify({ targetUrl: config.nodeServiceURL + gameChainPath, query: gcQuery });
+                        const response = await fetch(gcUrl, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ query: 'query { getCurrentGame { gameId board currentTurn status winner moveCount redPlayerName yellowPlayerName } }' })
+                            body: gcBody
                         });
                         const gameData = await response.json();
                         gameState = gameData.data.getCurrentGame;
@@ -1475,6 +1591,87 @@
         function hideLoader() { document.getElementById("loader").classList.remove("active"); }
 
         // Blockchain status updates replace activity log for cleaner UX
+
+        // TOAST NOTIFICATION SYSTEM
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // LATENCY TRACKING
+        let _lastLatency = 0;
+        const _origGraphql = graphql;
+        graphql = async function(query, showLoading) {
+            const start = performance.now();
+            try {
+                const result = await _origGraphql(query, showLoading);
+                _lastLatency = Math.round(performance.now() - start);
+                updateLatencyDisplay(_lastLatency);
+                return result;
+            } catch(e) {
+                _lastLatency = Math.round(performance.now() - start);
+                updateLatencyDisplay(_lastLatency);
+                throw e;
+            }
+        };
+
+        function updateLatencyDisplay(ms) {
+            const el = document.getElementById('latencyValue');
+            if (!el) return;
+            el.textContent = ms;
+            el.className = 'latency-value ' + (ms < 200 ? 'good' : ms < 500 ? 'medium' : 'poor');
+        }
+
+        // AUTO-RECONNECTION
+        let _reconnectAttempt = 0;
+        let _reconnectTimer = null;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+
+        function startReconnection() {
+            if (_reconnectAttempt >= MAX_RECONNECT_ATTEMPTS) {
+                showToast('Connection lost. Please refresh the page.', 'error');
+                return;
+            }
+            _reconnectAttempt++;
+            const delay = Math.pow(2, _reconnectAttempt - 1) * 1000;
+            const overlay = document.getElementById('reconnectOverlay');
+            const countdown = document.getElementById('reconnectCountdown');
+            if (overlay) overlay.classList.add('active');
+            let remaining = Math.ceil(delay / 1000);
+            if (countdown) countdown.textContent = '(' + remaining + 's)';
+            _reconnectTimer = setInterval(() => {
+                remaining--;
+                if (countdown) countdown.textContent = '(' + remaining + 's)';
+                if (remaining <= 0) { clearInterval(_reconnectTimer); attemptReconnect(); }
+            }, 1000);
+        }
+
+        async function attemptReconnect() {
+            try {
+                await loadConfig();
+                _reconnectAttempt = 0;
+                const overlay = document.getElementById('reconnectOverlay');
+                if (overlay) overlay.classList.remove('active');
+                showToast('Reconnected!', 'success');
+            } catch(e) { startReconnection(); }
+        }
+
+        const _origUpdateConnection = updateConnectionStatus;
+        updateConnectionStatus = function(connected) {
+            _origUpdateConnection(connected);
+            if (!connected && _reconnectAttempt === 0) startReconnection();
+            else if (connected) {
+                _reconnectAttempt = 0;
+                if (_reconnectTimer) { clearInterval(_reconnectTimer); _reconnectTimer = null; }
+                const overlay = document.getElementById('reconnectOverlay');
+                if (overlay) overlay.classList.remove('active');
+            }
+        };
 
         function toggleSound() {
             const enabled = sounds.toggle();

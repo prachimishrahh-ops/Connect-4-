@@ -103,7 +103,7 @@ mkdir -p ../frontend/web_a ../frontend/web_b
 cat > ../frontend/web_a/config_conway.json <<EOF
 {
   "nodeServiceURL": "http://localhost:8080",
-  "liarsDiceAppId": "$CONNECT4_APP_ID",
+  "connect4AppId": "$CONNECT4_APP_ID",
   "bankrollAppId": "$BANKROLL_APP_ID",
   "masterChain": "$DEFAULT_CHAIN_ID",
   "lobbyChain": "$DEFAULT_CHAIN_ID",
@@ -114,7 +114,7 @@ EOF
 cat > ../frontend/web_b/config_conway.json <<EOF
 {
   "nodeServiceURL": "http://localhost:8081",
-  "liarsDiceAppId": "$CONNECT4_APP_ID",
+  "connect4AppId": "$CONNECT4_APP_ID",
   "bankrollAppId": "$BANKROLL_APP_ID",
   "masterChain": "$DEFAULT_CHAIN_ID",
   "lobbyChain": "$DEFAULT_CHAIN_ID",

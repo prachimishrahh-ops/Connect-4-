@@ -114,7 +114,7 @@ pub enum Connect4Operation {
     ///
     /// Subscribes to the lobby chain for matchmaking events.
     /// Must be called once after the application is instantiated on a user chain.
-    InitialSetup {},
+    InitialSetup { lobby_chain: ChainId },
 
     // ============================================
     // MASTER CHAIN OPERATIONS (instantiate_value = 0)
@@ -457,30 +457,6 @@ pub enum GameEndReason {
     Timeout,
 }
 
-// ============================================
-// BACKWARD COMPATIBILITY ALIASES
-// ============================================
-// These aliases maintain compatibility with the original codebase structure.
-// The game logic has been fully converted to Connect4 while preserving
-// the proven state management and messaging infrastructure.
-
-/// Backward compatibility alias for Connect4Abi
-pub type LiarsDiceAbi = Connect4Abi;
-
-/// Backward compatibility alias for Connect4Operation
-pub type LiarsDiceOperation = Connect4Operation;
-
-/// Backward compatibility alias for Connect4Message
-pub type LiarsDiceMessage = Connect4Message;
-
-/// Backward compatibility alias for Connect4Parameters
-pub type LiarsDiceParameters = Connect4Parameters;
-
-/// Backward compatibility alias for Connect4Event
-pub type LiarsDiceEvent = Connect4Event;
-
-/// Backward compatibility alias for CONNECT4_STREAM_NAME
-pub const LIARS_DICE_STREAM_NAME: &[u8] = CONNECT4_STREAM_NAME;
 
 #[cfg(test)]
 mod tests {

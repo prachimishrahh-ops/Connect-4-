@@ -6,7 +6,43 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-green)](https://www.docker.com/)
 [![Status](https://img.shields.io/badge/Status-Production_Ready-success)](https://github.com)
 
---- 
+---
+
+## 🌐 LIVE DEMO - Play Now on Conway Testnet!
+
+**🎮 Play Now (No Setup Required):**
+- 🔴 **Player A (Red):** https://connect4-player-6fd52v77l-pratiikpys-projects.vercel.app
+- 🟡 **Player B (Yellow):** https://connect4-player-guricjcs8-pratiikpys-projects.vercel.app
+
+**✅ Verified Conway Testnet Deployment** - Updated January 31, 2026
+
+> *Open both URLs in separate browser tabs/windows to play against yourself, or share the Yellow player link with a friend!*
+
+---
+
+## 🔍 Conway Testnet Verification (For Judges)
+
+**Quick Verification Steps:**
+
+1. **Test Live Demo:**
+   - Visit: https://connect4-player-6fd52v77l-pratiikpys-projects.vercel.app
+   - Open Browser DevTools (F12) → Console tab
+   - Look for: `POST https://conway1.linera.blockhunters.services/...`
+   - ✅ Confirms: Connected to real Conway Testnet!
+
+2. **Verify App Exists on Conway:**
+```bash
+curl https://conway1.linera.blockhunters.services/chains/b84bf12c11eca32b88cfdc68faab9a2445ecba61c83d9f36b6eeea02eca76c5d/applications/75b64789de1b3ec591c67431a244bd99e602a0ac3ae08e868de34dfc199db77d
+```
+**Expected Response:** `{"data":{"chainType":0}}`
+
+3. **Test Gameplay:**
+   - Connect wallet (if needed)
+   - Create profile
+   - Play a game
+   - All moves confirmed on Conway Testnet in <1 second
+
+---
 
 ## 📹 Demo Video
 
@@ -114,7 +150,7 @@ self.runtime.emit(GameEvent::MoveMade {
 });
 ```
 
-**GraphQL subscriptions** push updates to frontend in real-time (no polling!).
+**Backend emits events** via `runtime.emit()` for real-time state changes. Frontend uses fast polling (300ms during matchmaking, 500ms during gameplay) for responsive updates.
 
 #### **4. State Management with Instant Finality**
 ```rust
@@ -188,7 +224,7 @@ pub struct Game {
 
 ### Frontend (Vanilla JS)
 - **Pure HTML/CSS/JS** - No frameworks, instant load
-- **GraphQL Client** - Real-time subscriptions
+- **GraphQL Client** - Fast polling for real-time updates
 - **Responsive design** - Works on all devices
 - **Professional UI** - Smooth animations, sound effects
 
@@ -242,7 +278,7 @@ self.runtime.emit(
 );
 ```
 
-**Why This Matters:** GraphQL subscriptions receive these events instantly, enabling real-time UI updates in <500ms.
+**Why This Matters:** Events update on-chain state instantly. Frontend fast-polling (300-500ms) picks up changes for real-time UI updates in <500ms.
 
 ### 3. Cross-Chain Event Subscription
 
@@ -453,7 +489,7 @@ http://localhost:5174
 
 #### **4. Real-Time Features**
 - ✅ Event emissions (`runtime.emit()`)
-- ✅ GraphQL subscriptions
+- ✅ Fast GraphQL polling (300-500ms)
 - ✅ Frontend receives events
 - ✅ Updates in <2 seconds
 
@@ -525,17 +561,18 @@ cd frontend/web_b && python -m http.server 8001
 - [x] Microchains architecture
 - [x] Cross-chain messaging
 - [x] Victory detection
+- [x] ELO rating system (integer math for WASM)
 - [x] Docker deployment
 - [x] Automated testing
 - [x] Conway testnet deployment
 
 ### 🔮 Future (v2.0+)
-- [ ] ELO rating system
-- [ ] Global leaderboard
+- [ ] Global leaderboard UI
 - [ ] Tournament mode
 - [ ] Mobile app
 - [ ] AI opponent mode
 - [ ] Game replays
+- [ ] GraphQL subscriptions (replace polling)
 
 ---
 

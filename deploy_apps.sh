@@ -35,7 +35,7 @@ echo "Bankroll: $BANKROLL_APP_ID"
 sleep 2
 
 echo ""
-echo "=== Deploying Liar's Dice on Lobby Chain (type 1) ==="
+echo "=== Deploying Connect4 Battle on Lobby Chain (type 1) ==="
 LOBBY_APP=$(linera --wallet "$W1" --storage "$S1" --keystore "$K1" \
   --wait-for-outgoing-messages \
   project publish-and-create . connect4 \
@@ -67,7 +67,7 @@ echo "User A chain set as default"
 sleep 1
 
 echo ""
-echo "=== Deploying Liar's Dice for Player A (type 3) ==="
+echo "=== Deploying Connect4 Battle for Player A (type 3) ==="
 USER_A_APP=$(linera --wallet "$W2" --storage "$S2" --keystore "$K2" \
   --wait-for-outgoing-messages \
   project publish-and-create . connect4 \
@@ -103,7 +103,7 @@ echo "User B chain set as default"
 sleep 1
 
 echo ""
-echo "=== Deploying Liar's Dice for Player B (type 3) ==="
+echo "=== Deploying Connect4 Battle for Player B (type 3) ==="
 USER_B_APP=$(linera --wallet "$W3" --storage "$S3" --keystore "$K3" \
   --wait-for-outgoing-messages \
   project publish-and-create . connect4 \
@@ -138,7 +138,7 @@ mkdir -p frontend/web_a frontend/web_b
 cat > frontend/web_a/config.json << EOF
 {
   "nodeServiceURL": "http://localhost:8092",
-  "liarsDiceAppId": "$USER_A_APP",
+  "connect4AppId": "$USER_A_APP",
   "bankrollAppId": "$BANKROLL_APP_ID",
   "masterChain": "$MASTER",
   "lobbyChain": "$LOBBY",
@@ -149,7 +149,7 @@ EOF
 cat > frontend/web_b/config.json << EOF
 {
   "nodeServiceURL": "http://localhost:8093",
-  "liarsDiceAppId": "$USER_B_APP",
+  "connect4AppId": "$USER_B_APP",
   "bankrollAppId": "$BANKROLL_APP_ID",
   "masterChain": "$MASTER",
   "lobbyChain": "$LOBBY",

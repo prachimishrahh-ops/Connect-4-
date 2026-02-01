@@ -1247,7 +1247,7 @@
                 const response = await fetch('config.json');
                 config = await response.json();
                 log('Connected to ' + config.nodeServiceURL, 'success');
-                log('App ID: ' + config.liarsDiceAppId.substring(0, 16) + '...', 'info');
+                log('App ID: ' + config.connect4AppId.substring(0, 16) + '...', 'info');
                 updateConnectionStatus(true);
             } catch (error) {
                 log('Failed to load config: ' + error.message, 'error');
@@ -1255,17 +1255,25 @@
             }
         }
 
+        function _isLocal() {
+            return config.nodeServiceURL.includes('localhost') || config.nodeServiceURL.includes('127.0.0.1');
+        }
         async function graphql(mutation, showLoading) {
-            const url = config.nodeServiceURL + '/chains/' + config.userChain + '/applications/' + config.liarsDiceAppId;
+            const chainPath = '/chains/' + config.userChain + '/applications/' + config.connect4AppId;
+            const isLocal = _isLocal();
+            const fetchUrl = isLocal ? (config.nodeServiceURL + chainPath) : '/api/proxy';
+            const fetchBody = isLocal
+                ? JSON.stringify({ query: mutation })
+                : JSON.stringify({ targetUrl: config.nodeServiceURL + chainPath, query: mutation });
             try {
                 if (showLoading) showLoader('Processing...');
                 const controller = new AbortController();
                 const timeoutId = setTimeout(function() { controller.abort(); }, 10000);
 
-                const response = await fetch(url, {
+                const response = await fetch(fetchUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: mutation }),
+                    body: fetchBody,
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);

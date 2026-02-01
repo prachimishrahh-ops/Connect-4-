@@ -183,7 +183,7 @@ impl Connect4GameState {
 
 #[derive(RootView)]
 #[view(context = ViewStorageContext)]
-pub struct LiarsDiceState {
+pub struct Connect4State {
     // ============================================
     // ALL CHAINS - Common state
     // ============================================

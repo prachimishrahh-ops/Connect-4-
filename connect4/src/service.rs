@@ -19,10 +19,10 @@ use linera_sdk::{
     ServiceRuntime,
 };
 
-use self::state::{Connect4GameState, LiarsDiceState};
+use self::state::{Connect4GameState, Connect4State};
 
 pub struct Connect4Service {
-    state: Arc<LiarsDiceState>,
+    state: Arc<Connect4State>,
     runtime: Arc<ServiceRuntime<Self>>,
 }
 
@@ -36,7 +36,7 @@ impl Service for Connect4Service {
     type Parameters = ();
 
     async fn new(runtime: ServiceRuntime<Self>) -> Self {
-        let state = LiarsDiceState::load(runtime.root_view_storage_context())
+        let state = Connect4State::load(runtime.root_view_storage_context())
             .await
             .expect("Failed to load state");
         Connect4Service {
@@ -62,7 +62,7 @@ impl Service for Connect4Service {
 
 #[allow(dead_code)]
 struct QueryRoot {
-    state: Arc<LiarsDiceState>,
+    state: Arc<Connect4State>,
     runtime: Arc<ServiceRuntime<Connect4Service>>,
 }
 

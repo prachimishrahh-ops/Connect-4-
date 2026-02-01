@@ -11,7 +11,7 @@
 
 mod state;
 
-use self::state::{Connect4GameState, Connect4Player, LiarsDiceState};
+use self::state::{Connect4GameState, Connect4Player, Connect4State};
 use abi::connect4::{check_winner, drop_disc, is_board_full, GameStatus, Move, Player};
 use abi::leaderboard::SimpleLeaderboardEntry;
 use abi::player::{calculate_elo_change, PlayerProfile, QueuedPlayer, UserStatus, STARTING_ELO};
@@ -28,7 +28,7 @@ use linera_sdk::{
 };
 
 pub struct Connect4Contract {
-    state: LiarsDiceState,
+    state: Connect4State,
     runtime: ContractRuntime<Self>,
 }
 
@@ -45,7 +45,7 @@ impl Contract for Connect4Contract {
     type EventValue = Connect4Event;
 
     async fn load(runtime: ContractRuntime<Self>) -> Self {
-        let state = LiarsDiceState::load(runtime.root_view_storage_context())
+        let state = Connect4State::load(runtime.root_view_storage_context())
             .await
             .expect("Failed to load state");
         Connect4Contract { state, runtime }
@@ -86,13 +86,14 @@ impl Contract for Connect4Contract {
     }
 
     async fn execute_operation(&mut self, operation: Self::Operation) -> Self::Response {
-        let _chain_type = *self.state.chain_type.get();
+        let chain_type = *self.state.chain_type.get();
 
         match operation {
             // ============================================
             // USER CHAIN OPERATIONS
             // ============================================
             Connect4Operation::SetProfile { name } => {
+                self.assert_user_chain(chain_type);
                 let chain_id = self.runtime.chain_id();
                 let owner = self.runtime.authenticated_signer().expect("No authenticated signer");
                 let timestamp = self.runtime.system_time();
@@ -109,6 +110,7 @@ impl Contract for Connect4Contract {
             }
 
             Connect4Operation::FindMatch {} => {
+                self.assert_user_chain(chain_type);
                 let profile = self.state.user_profile.get()
                     .as_ref()
                     .expect("Profile not set. Call SetProfile first.");
@@ -142,6 +144,7 @@ impl Contract for Connect4Contract {
             }
 
             Connect4Operation::CancelMatch {} => {
+                self.assert_user_chain(chain_type);
                 let chain_id = self.runtime.chain_id();
 
                 if let Some(lobby_chain) = self.state.lobby_chain.get().as_ref() {
@@ -159,6 +162,7 @@ impl Contract for Connect4Contract {
             }
 
             Connect4Operation::MakeMove { column } => {
+                self.assert_user_chain(chain_type);
                 let chain_id = self.runtime.chain_id();
 
                 if column > 6 {
@@ -181,6 +185,7 @@ impl Contract for Connect4Contract {
             }
 
             Connect4Operation::Surrender {} => {
+                self.assert_user_chain(chain_type);
                 let chain_id = self.runtime.chain_id();
 
                 if let Some(game_chain) = self.state.user_game_chain.get().as_ref() {
@@ -193,6 +198,7 @@ impl Contract for Connect4Contract {
             }
 
             Connect4Operation::ExitGame {} => {
+                self.assert_user_chain(chain_type);
                 self.state.user_game_chain.set(None);
                 self.state.user_color.set(None);
                 self.state.channel_game_state.set(None);
@@ -205,14 +211,22 @@ impl Contract for Connect4Contract {
             }
 
             Connect4Operation::GetBalance {} => {
+                self.assert_user_chain(chain_type);
                 let balance = self.bankroll_get_balance();
                 self.state.user_balance.set(balance);
                 log::info!("GetBalance: {}", balance);
             }
 
-            Connect4Operation::InitialSetup {} => {
-                let lobby_chain = self.get_lobby_chain();
+            Connect4Operation::InitialSetup { lobby_chain } => {
+                // First-time setup: set chain_type to User (3) if not already set
+                if chain_type == 0 {
+                    self.state.chain_type.set(3);
+                    log::info!("InitialSetup: Set chain_type to User (3)");
+                }
+
+                // Store the lobby chain provided by the frontend config
                 self.state.lobby_chain.set(Some(lobby_chain));
+                self.state.cached_lobby_chain.set(Some(lobby_chain));
 
                 log::info!("InitialSetup: Configured lobby chain {:?}", lobby_chain);
             }
@@ -221,6 +235,7 @@ impl Contract for Connect4Contract {
             // MASTER CHAIN OPERATIONS
             // ============================================
             Connect4Operation::AddLobbyChain { chain_id } => {
+                self.assert_master_chain(chain_type);
                 log::info!("Adding lobby chain: {:?}", chain_id);
 
                 let info = abi::management::LobbyChainInfo::new(chain_id, self.runtime.system_time());
@@ -228,6 +243,7 @@ impl Contract for Connect4Contract {
             }
 
             Connect4Operation::AddGameChain { chain_id } => {
+                self.assert_master_chain(chain_type);
                 log::info!("Adding game chain: {:?}", chain_id);
 
                 let lobby_keys = self.state.lobby_chains.indices().await.expect("Failed to get lobby chains");
@@ -240,6 +256,7 @@ impl Contract for Connect4Contract {
             }
 
             Connect4Operation::MintToken { chain_id, amount } => {
+                self.assert_master_chain(chain_type);
                 log::info!("MintToken: {:?} amount: {}", chain_id, amount);
                 self.bankroll_mint_token(chain_id, amount);
             }
@@ -247,7 +264,7 @@ impl Contract for Connect4Contract {
     }
 
     async fn execute_message(&mut self, message: Self::Message) {
-        let _chain_type = *self.state.chain_type.get();
+        let chain_type = *self.state.chain_type.get();
         let origin = self.runtime.message_origin_chain_id().expect("No origin chain");
 
         match message {
@@ -309,14 +326,20 @@ impl Contract for Connect4Contract {
                     player, column, row, your_turn
                 );
 
-                // Update local game state cache
+                // Update or initialize local game state cache
+                let my_color = self.state.user_color.get().unwrap_or(Player::Red);
+                let current_turn = if your_turn { my_color } else { my_color.opponent() };
+
                 if let Some(ref mut game) = *self.state.channel_game_state.get_mut() {
                     game.board = board;
-                    game.current_turn = if your_turn {
-                        self.state.user_color.get().unwrap_or(Player::Red)
-                    } else {
-                        self.state.user_color.get().unwrap_or(Player::Red).opponent()
-                    };
+                    game.current_turn = current_turn;
+                } else {
+                    // First MoveMade message - initialize game state
+                    let mut game = Connect4GameState::new(0);
+                    game.board = board;
+                    game.current_turn = current_turn;
+                    game.status = GameStatus::InProgress;
+                    self.state.channel_game_state.set(Some(game));
                 }
             }
 
@@ -871,6 +894,33 @@ enum MoveResult {
 }
 
 impl Connect4Contract {
+    /// Assert this is a user chain (type 3)
+    fn assert_user_chain(&self, chain_type: u64) {
+        assert!(
+            chain_type == 3 || chain_type == 0,
+            "Operation requires User chain (type 3), got type {}",
+            chain_type
+        );
+    }
+
+    /// Assert this is a master chain (type 0)
+    fn assert_master_chain(&self, chain_type: u64) {
+        assert_eq!(
+            chain_type, 0,
+            "Operation requires Master chain (type 0), got type {}",
+            chain_type
+        );
+    }
+
+    /// Assert this is a game chain (type 0 allowed for single-chain Docker deployment)
+    fn assert_game_chain(&self, chain_type: u64) {
+        assert!(
+            chain_type == 2 || chain_type == 0,
+            "Operation requires Game chain (type 2) or Master chain (type 0), got type {}",
+            chain_type
+        );
+    }
+
     /// Send a message to another chain with tracking
     fn message_manager(&mut self, destination: ChainId, message: Connect4Message) {
         self.runtime

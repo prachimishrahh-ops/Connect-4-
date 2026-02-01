@@ -3,6 +3,9 @@ set -eu
 
 echo "=== Starting Connect4 Battle Docker Deployment ==="
 
+# Clean up any previous wallet/keystore from earlier runs
+rm -rf /root/.config/linera 2>/dev/null || true
+
 # Create a temp directory for linera network
 export LINERA_TMP=$(mktemp -d)
 echo "Using temp directory: $LINERA_TMP"
@@ -35,6 +38,7 @@ echo "✅ Network is ready!"
 # Create a SEPARATE wallet for deployment (network holds lock on wallet_0)
 export DEPLOY_DIR=$(mktemp -d)
 export LINERA_WALLET="$DEPLOY_DIR/wallet.json"
+export LINERA_KEYSTORE="$DEPLOY_DIR/keystore.json"
 export LINERA_STORAGE="rocksdb:$DEPLOY_DIR/client.db"
 
 echo "🔑 Creating deployment wallet via faucet..."
