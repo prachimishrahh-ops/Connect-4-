@@ -11,8 +11,8 @@
 ## 🌐 LIVE DEMO - Play Now on Conway Testnet!
 
 **🎮 Play Now (No Setup Required):**
-- 🔴 **Player A (Red):** https://connect4-player-8xje0dvoy-pratiikpys-projects.vercel.app
-- 🟡 **Player B (Yellow):** https://connect4-player-gboas5yxj-pratiikpys-projects.vercel.app
+- 🔴 **Player A (Red):** https://connect4-player-a.vercel.app
+- 🟡 **Player B (Yellow):** https://connect4-player-b.vercel.app
 
 **✅ Verified Conway Testnet Deployment** - Updated February 1, 2026
 
@@ -25,7 +25,7 @@
 **Quick Verification Steps:**
 
 1. **Test Live Demo:**
-   - Visit: https://connect4-player-8xje0dvoy-pratiikpys-projects.vercel.app
+   - Visit: https://connect4-player-a.vercel.app
    - Open Browser DevTools (F12) → Console tab
    - Look for: `POST https://conway1.linera.blockhunters.services/...`
    - ✅ Confirms: Connected to real Conway Testnet!
