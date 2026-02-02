@@ -578,10 +578,6 @@ cd frontend/web_b && python -m http.server 8001
 
 ## 📚 Documentation
 
-Full documentation available in `docs/internal/` folder
-
----
-
 ## 🤝 Contributing
 
 We welcome contributions! Please follow these steps:
@@ -597,11 +593,6 @@ We welcome contributions! Please follow these steps:
 ## 📄 License
 
 Apache 2.0 License - see [LICENSE](LICENSE) file for details.
-
----
-
----
-
 
 ---
 
